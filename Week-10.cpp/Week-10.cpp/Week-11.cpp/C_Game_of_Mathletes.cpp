@@ -27,8 +27,25 @@ int main()
         {
             if(mp[a]>=1 && mp[b]>=1)
             {
-                cnt++;
-                mp[a]--;mp[b]--;
+                if(a==b)
+                {
+                    if(a%2==0)
+                    {
+                        cnt += (mp[a]/2);
+                        mp[a] = 0; mp[b] = 0;
+                    }
+                    else
+                    {
+                        cnt += (mp[a]/2);
+                        mp[a] = 1; mp[b] = 0;
+                    }
+                }
+                else
+                {
+                    ll mn = min(mp[a],mp[b]);
+                    cnt += mn;
+                    mp[a] -= mn; mp[b]  -= mn;
+                }
             }
             a++,b--;
             //cout<<a<<" v "<<b<<'\n';
