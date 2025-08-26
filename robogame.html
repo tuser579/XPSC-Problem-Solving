@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Robot Jump Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: #e0f7fa;
+    }
+    #robot {
+      position: absolute;
+      bottom: 0;
+      right: 50px;
+      width: 50px;
+      height: 50px;
+      background: #2196f3;
+      border-radius: 10px;
+    }
+    .item {
+      position: absolute;
+      bottom: 0;
+      width: 30px;
+      height: 30px;
+      background: #f44336;
+      border-radius: 5px;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    #highScore {
+      position: absolute;
+      top: 40px;
+      left: 10px;
+      font-size: 20px;
+      color: #666;
+    }
+    #controls {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #controls button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    #controls button:hover {
+      background-color: #1976d2;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="robot"></div>
+    <div id="score">Score: 0</div>
+    <div id="highScore">High Score: 0</div>
+    <div id="controls">
+      <button id="startBtn">Start</button>
+      <button id="pauseBtn">Pause</button>
+    </div>
+  </div>
+
+  <script>
+    const robot = document.getElementById("robot");
+    const scoreDisplay = document.getElementById("score");
+    const highScoreDisplay = document.getElementById("highScore");
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+
+    let score = 0;
+    let highScore = localStorage.getItem("highScore") || 0;
+    let jumping = false;
+    let robotBottom = 0;
+    let gameRunning = false;
+    let spawnTimeouts = [];
+
+    highScoreDisplay.textContent = "High Score: " + highScore;
+
+    function jump() {
+      if (!gameRunning || jumping) return;
+      jumping = true;
+
+      let jumpHeight = 100 + score * 5;
+      robotBottom = jumpHeight;
+      robot.style.bottom = robotBottom + "px";
+
+      setTimeout(() => {
+        robotBottom = 0;
+        robot.style.bottom = robotBottom + "px";
+        jumping = false;
+      }, 300);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") jump();
+    });
+
+    function showFloatingScore() {
+      const float = document.createElement("div");
+      float.textContent = "+1";
+      float.style.position = "absolute";
+      float.style.right = "100px";
+      float.style.bottom = robotBottom + 60 + "px";
+      float.style.color = "#4caf50";
+      float.style.fontSize = "20px";
+      float.style.fontWeight = "bold";
+      float.style.transition = "opacity 1s ease-out";
+      document.body.appendChild(float);
+
+      setTimeout(() => {
+        float.style.opacity = "0";
+        setTimeout(() => float.remove(), 1000);
+      }, 500);
+    }
+
+    function spawnItem() {
+      if (!gameRunning) return;
+
+      const item = document.createElement("div");
+      item.classList.add("item");
+      item.style.left = "-30px";
+      document.getElementById("game").appendChild(item);
+
+      let itemPosition = -30;
+      const interval = setInterval(() => {
+        if (!gameRunning) {
+          clearInterval(interval);
+          item.remove();
+          return;
+        }
+
+        itemPosition += 5;
+        item.style.left = itemPosition + "px";
+
+        const robotRight = window.innerWidth - 50;
+        const robotLeft = robotRight - 50;
+        const itemRight = itemPosition + 30;
+        const itemLeft = itemPosition;
+
+        scoreDisplay.textContent = "Score: " + score;
+
+        if (
+          itemRight > robotLeft &&
+          itemLeft < robotRight &&
+          robotBottom < 30
+        ) {
+          alert("💥 Game Over! Final Score: " + score);
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("highScore", highScore);
+            highScoreDisplay.textContent = "High Score: " + highScore;
+          }
+          score = 0;
+          scoreDisplay.textContent = "Score: " + score;
+          document.querySelectorAll(".item").forEach(el => el.remove());
+          clearInterval(interval);
+          stopGame();
+        }
+
+        if (
+          itemRight > robotLeft &&
+          itemLeft < robotRight &&
+          robotBottom >= 100
+        ) {
+          score++;
+          scoreDisplay.textContent = "Score: " + score;
+          showFloatingScore();
+          clearInterval(interval);
+          item.remove();
+        }
+
+        if (itemPosition > window.innerWidth) {
+          clearInterval(interval);
+          item.remove();
+        }
+      }, 20);
+    }
+
+    function startGame() {
+      if (gameRunning) return;
+      gameRunning = true;
+      score = 0;
+      scoreDisplay.textContent = "Score: " + score;
+      spawnLoop();
+    }
+
+    function stopGame() {
+      gameRunning = false;
+      spawnTimeouts.forEach(timeout => clearTimeout(timeout));
+      spawnTimeouts = [];
+    }
+
+    function spawnLoop() {
+      if (!gameRunning) return;
+      spawnItem();
+      const nextDelay = Math.floor(Math.random() * 1000) + 500;
+      const timeout = setTimeout(spawnLoop, nextDelay);
+      spawnTimeouts.push(timeout);
+    }
+
+    startBtn.addEventListener("click", startGame);
+    pauseBtn.addEventListener("click", stopGame);
+  </script>
+</body>
+</html>
